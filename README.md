@@ -1,5 +1,7 @@
 # Agent simulation
 
+![preview](img/readme.png)
+
 Heavily based on this [video](https://www.youtube.com/watch?v=X-iSQQgOd1A), after seeing it i was trying to reproduce the second part, learning rust GUI and GPU along the way 🙌
 
 The inner logic of agent an simulation can be listed as:
