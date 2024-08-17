@@ -1,9 +1,10 @@
+use core::f64::consts::PI;
 use rand::Rng;
-use std::cmp::{min,max};
+use std::cmp::{max, min};
 
 use crate::{MAX_X, MAX_Y};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Agent {
     pos_x: f64,
     pos_y: f64,
@@ -15,35 +16,34 @@ impl Agent {
         Agent {
             pos_x: rng.gen::<f64>() * size_x as f64,
             pos_y: rng.gen::<f64>() * size_y as f64,
-            angle: rng.gen::<f64>() * 2.0 * 3.14159,
+            angle: rng.gen::<f64>() * 2.0 * PI,
         }
     }
     /*
-fn new_agent() -> Agent {
-    let mut rng = rand::thread_rng();
-    match AGENT_SPAWN {
-        1 => Agent{
-                pos_x: rng.gen::<f64>() * IMAGE_X as f64,
-                pos_y: rng.gen::<f64>() * IMAGE_Y as f64,
-                angle: rng.gen::<f64>() * 2.0 * 3.14159,
-            },
-        2 => {
-            let distance = rng.gen::<f64>() * SPAWN_SIZE;
-            let angle = rng.gen::<f64>() * 2.0 * 3.14159;
-            Agent{
-                pos_x: IMAGE_X as f64 / 2.0 + angle.cos() * distance,
-                pos_y: IMAGE_Y as f64 / 2.0 + angle.sin() * distance,
-                angle: angle + 3.14159,
-            }},
-        _ => Agent{
-                pos_x: IMAGE_X as f64 / 2.0,
-                pos_y: IMAGE_Y as f64 / 2.0,
-                angle: rng.gen::<f64>() * 2.0 * 3.14159,
-            },
+    fn new_agent() -> Agent {
+        let mut rng = rand::thread_rng();
+        match AGENT_SPAWN {
+            1 => Agent{
+                    pos_x: rng.gen::<f64>() * IMAGE_X as f64,
+                    pos_y: rng.gen::<f64>() * IMAGE_Y as f64,
+                    angle: rng.gen::<f64>() * 2.0 * 3.14159,
+                },
+            2 => {
+                let distance = rng.gen::<f64>() * SPAWN_SIZE;
+                let angle = rng.gen::<f64>() * 2.0 * 3.14159;
+                Agent{
+                    pos_x: IMAGE_X as f64 / 2.0 + angle.cos() * distance,
+                    pos_y: IMAGE_Y as f64 / 2.0 + angle.sin() * distance,
+                    angle: angle + 3.14159,
+                }},
+            _ => Agent{
+                    pos_x: IMAGE_X as f64 / 2.0,
+                    pos_y: IMAGE_Y as f64 / 2.0,
+                    angle: rng.gen::<f64>() * 2.0 * 3.14159,
+                },
+        }
     }
-}
-*/
-
+    */
 }
 // fn update_agents(&mut self) {
 //         let mut rng = rand::thread_rng();
@@ -115,15 +115,24 @@ fn new_agent() -> Agent {
 //         }}
 //     }
 
-fn sense(trail_map: [[f64; MAX_Y]; MAX_X], agent: &Agent, angle_offset: f64, distance_offset: f64, size: usize) -> f64 {
-    let angle = agent.angle + angle_offset * 3.14159 / 180_f64;
-    let (x, y) = (agent.pos_x + distance_offset * angle.cos(), agent.pos_y + distance_offset * angle.sin());
+fn sense(
+    trail_map: [[f64; MAX_Y]; MAX_X],
+    agent: &Agent,
+    angle_offset: f64,
+    distance_offset: f64,
+    size: usize,
+) -> f64 {
+    let angle = agent.angle + angle_offset * PI / 180_f64;
+    let (x, y) = (
+        agent.pos_x + distance_offset * angle.cos(),
+        agent.pos_y + distance_offset * angle.sin(),
+    );
     let mut sum = 0.0;
 
     for offset_x in -(size as isize)..size as isize {
         for offset_y in -(size as isize)..size as isize {
-            let pick_x = min(max(x.round() as isize + offset_x, 0), MAX_X as isize -1) as usize;
-            let pick_y = min(max(y.round() as isize + offset_y, 0), MAX_Y as isize -1) as usize;
+            let pick_x = min(max(x.round() as isize + offset_x, 0), MAX_X as isize - 1) as usize;
+            let pick_y = min(max(y.round() as isize + offset_y, 0), MAX_Y as isize - 1) as usize;
             sum += trail_map[pick_x][pick_y];
         }
     }
