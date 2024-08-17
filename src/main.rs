@@ -2,54 +2,77 @@ use eframe::egui;
 use egui::ColorImage;
 
 mod simulation;
-use simulation::Agent;
+use simulation::{
+    agents_move, agents_sense_rotate, map_deposit, map_diffuse_decay, Agent, Agents, TrailMap,
+};
 
 const MAX_X: usize = 1920;
 const MAX_Y: usize = 1080;
-const MAX_AGENT: usize = 999999;
+const MAX_AGENT: usize = 9999;
+
+/// Default settings
+const SIZE_X: usize = 512;
+const SIZE_Y: usize = 512;
+const AGENT_N: usize = 6000;
+const AGENT_SPEED: f64 = 1_f64;
+const AGENT_TURN: f64 = 35_f64;
+const SENSOR_ANGLE: f64 = 35_f64;
+const SENSOR_DISTANCE: f64 = 3.5;
+const SENSOR_SIZE: usize = 1;
+const TRAIL_WEIGHT: f64 = 255_f64;
+const TRAIL_DECAY: f64 = 1.8;
+const TRAIL_DIFFUSE: f64 = 0.07;
 
 struct Settings {
-    // Simulations Settings
-    size_x: usize, // 320
-    size_y: usize, // 180
-    // Agents Settings
-    agent_n: usize,   // 250
-    agent_speed: f64, // 1
-    agent_turn: f64,  // 35
-    // Spawn Settings
-    // const AGENT_SPAWN: usize = 1;
-    // const SPAWN_SIZE: f64 = 100.0;
+    /// Simulations settings
+    size_x: usize,
+    size_y: usize,
+    /// Agents settings
+    agent_n: usize,
+    agent_speed: f64,
+    agent_turn: f64,
     // Sensor Settings
-    sensor_angle: f64,    // 35
-    sensor_distance: f64, // 3.5
-    sensor_size: usize,   // 1
+    sensor_angle: f64,
+    sensor_distance: f64,
+    sensor_size: usize,
     // Trail Settings
-    trail_weight: f64,  // 255
-    trail_decay: f64,   // 1.8
-    trail_diffuse: f64, // 0.07
+    trail_weight: f64,
+    trail_decay: f64,
+    trail_diffuse: f64,
 }
 
 impl Settings {
-    fn new() -> Self {
+    fn default_agents(&mut self) {
+        self.agent_n = AGENT_N;
+        self.agent_speed = AGENT_SPEED;
+        self.agent_turn = AGENT_TURN;
+    }
+    fn default_sensor(&mut self) {
+        self.sensor_angle = SENSOR_ANGLE;
+        self.sensor_distance = SENSOR_DISTANCE;
+        self.sensor_size = SENSOR_SIZE;
+    }
+    fn default_trail(&mut self) {
+        self.trail_weight = TRAIL_WEIGHT;
+        self.trail_decay = TRAIL_DECAY;
+        self.trail_diffuse = TRAIL_DIFFUSE;
+    }
+}
+
+impl Default for Settings {
+    fn default() -> Settings {
         Settings {
-            // Simulations Settings
-            size_x: 500, //320,
-            size_y: 400, //180,
-            // Agents Settings
-            agent_n: 10,
-            agent_speed: 1.0,
-            agent_turn: 35.0,
-            // Spawn Settings
-            // const AGENT_SPAWN: usize = 1;
-            // const SPAWN_SIZE: f64 = 100.0;
-            // Sensor Settings
-            sensor_angle: 35.0,
-            sensor_distance: 3.5,
-            sensor_size: 1,
-            // Trail Settings
-            trail_weight: 255.0,
-            trail_decay: 1.8,
-            trail_diffuse: 0.07,
+            size_x: SIZE_X,
+            size_y: SIZE_Y,
+            agent_n: AGENT_N,
+            agent_speed: AGENT_SPEED,
+            agent_turn: AGENT_TURN,
+            sensor_angle: SENSOR_ANGLE,
+            sensor_distance: SENSOR_DISTANCE,
+            sensor_size: SENSOR_SIZE,
+            trail_weight: TRAIL_WEIGHT,
+            trail_decay: TRAIL_DECAY,
+            trail_diffuse: TRAIL_DIFFUSE,
         }
     }
 }
@@ -57,17 +80,17 @@ impl Settings {
 struct MyEguiApp {
     // Simulation settings
     settings: Settings,
-
     // Buffer var
     textury: Option<egui::TextureHandle>,
     image: ColorImage,
-    trail_map: Vec<Vec<f64>>,
-    agents: Vec<Agent>,
+    trail_map: TrailMap,
+    agents: Agents,
     // State var
     running: bool,
 }
 
 fn main() -> eframe::Result<()> {
+    tracing_subscriber::fmt::init();
     let options = eframe::NativeOptions::default();
     eframe::run_native(
         "Srane Render",
@@ -78,13 +101,15 @@ fn main() -> eframe::Result<()> {
 
 impl MyEguiApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+        let settings = Settings::default();
+        let mut agents = Vec::new();
+        agents.resize_with(MAX_AGENT, || Agent::new(settings.size_x, settings.size_y));
         MyEguiApp {
-            settings: Settings::new(),
-            // Core var
+            settings,
             textury: None,
             image: ColorImage::new([MAX_X, MAX_Y], egui::Color32::DARK_GRAY),
             trail_map: vec![vec![0.0; MAX_X]; MAX_Y],
-            agents: vec![Agent::new(500, 400); MAX_AGENT],
+            agents,
             running: true,
         }
     }
@@ -102,8 +127,8 @@ impl MyEguiApp {
                 self.running = true
             };
             if ui.add(egui::Button::new("Reset")).clicked() {
-                todo!()
-            }; //TODO
+                self.settings = Settings::default()
+            };
             ui.separator();
             ui.label("Agents Settings");
             ui.add(egui::Slider::new(&mut self.settings.agent_n, 1..=MAX_AGENT).text("agent_n"));
@@ -114,11 +139,18 @@ impl MyEguiApp {
                 egui::Slider::new(&mut self.settings.agent_turn, 0.0..=360.0).text("agent_turn"),
             );
             if ui.add(egui::Button::new("Default")).clicked() {
-                todo!()
-            }; //TODO
-            ui.separator();
-            ui.label("Spawn Settings");
-            ui.label("TODO");
+                self.settings.default_agents()
+            };
+            if ui.add(egui::Button::new("Reset Agent")).clicked() {
+                let mut agents = Vec::new();
+                agents.resize_with(MAX_AGENT, || {
+                    Agent::new(self.settings.size_x, self.settings.size_y)
+                });
+                self.agents = agents;
+            };
+            // ui.separator();
+            // ui.label("Spawn Settings");
+            // ui.label("TODO");
             ui.separator();
             ui.label("Sensor Settings");
             ui.add(
@@ -131,8 +163,8 @@ impl MyEguiApp {
             );
             ui.add(egui::Slider::new(&mut self.settings.sensor_size, 0..=5).text("sensor_size"));
             if ui.add(egui::Button::new("Default")).clicked() {
-                todo!()
-            }; //TODO
+                self.settings.default_sensor()
+            };
             ui.separator();
             ui.label("Trail Settings");
             ui.add(
@@ -147,8 +179,8 @@ impl MyEguiApp {
                     .text("trail_diffuse"),
             );
             if ui.add(egui::Button::new("Default")).clicked() {
-                todo!()
-            }; //TODO
+                self.settings.default_trail()
+            };
             ui.separator();
             if self.running {
                 ui.add(egui::Spinner::new());
@@ -183,8 +215,10 @@ impl MyEguiApp {
 impl eframe::App for MyEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.running {
-            // TODO
-            // Update internal buffer by calling external function ! (soon gpu one)
+            agents_sense_rotate(&self.trail_map, &mut self.agents, &self.settings);
+            agents_move(&mut self.agents, &self.settings);
+            map_deposit(&self.agents, &mut self.trail_map, &self.settings);
+            map_diffuse_decay(&mut self.trail_map, &self.settings);
         }
         self.draw_map();
         self.left_panel(ctx);
