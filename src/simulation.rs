@@ -3,7 +3,7 @@ use rand::{thread_rng, Rng};
 use std::cmp::{max, min};
 use tracing::debug;
 
-use crate::config::{Settings, MAX_X, MAX_Y};
+use crate::config::{Settings, MAX_SIZE_X, MAX_SIZE_Y};
 
 #[derive(Clone, Debug)]
 pub struct Agent {
@@ -61,8 +61,14 @@ fn agent_sense(trail_map: &TrailMap, agent: &Agent, sensor_angle: f64, settings:
 
     for offset_x in -(settings.sensor_size as isize)..settings.sensor_size as isize {
         for offset_y in -(settings.sensor_size as isize)..settings.sensor_size as isize {
-            let pick_x = min(max(x.round() as isize + offset_x, 0), MAX_X as isize - 1) as usize;
-            let pick_y = min(max(y.round() as isize + offset_y, 0), MAX_Y as isize - 1) as usize;
+            let pick_x = min(
+                max(x.round() as isize + offset_x, 0),
+                MAX_SIZE_X as isize - 1,
+            ) as usize;
+            let pick_y = min(
+                max(y.round() as isize + offset_y, 0),
+                MAX_SIZE_Y as isize - 1,
+            ) as usize;
             sum += trail_map[pick_y][pick_x];
         }
     }
@@ -149,8 +155,10 @@ pub fn map_diffuse_decay(trail_map: &mut TrailMap, settings: &Settings) {
             let mut sum = 0.0;
             for offset_x in [-1, 0, 1] {
                 for offset_y in [-1, 0, 1] {
-                    let pick_x = min(max(x as isize + offset_x, 0), MAX_X as isize - 1) as usize;
-                    let pick_y = min(max(y as isize + offset_y, 0), MAX_Y as isize - 1) as usize;
+                    let pick_x =
+                        min(max(x as isize + offset_x, 0), MAX_SIZE_X as isize - 1) as usize;
+                    let pick_y =
+                        min(max(y as isize + offset_y, 0), MAX_SIZE_Y as isize - 1) as usize;
                     sum += source[pick_y][pick_x];
                 }
             }

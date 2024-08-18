@@ -1,7 +1,15 @@
-
-pub const MAX_X: usize = 1920;
-pub const MAX_Y: usize = 1080;
-pub const MAX_AGENT: usize = 9999;
+/// Max settings
+pub const MAX_SIZE_X: usize = 1920;
+pub const MAX_SIZE_Y: usize = 1080;
+pub const MAX_AGENT_N: usize = 99999;
+pub const MAX_AGENT_SPEED: f64 = 3_f64;
+pub const MAX_AGENT_TURN: f64 = 360_f64;
+pub const MAX_SENSOR_ANGLE: f64 = 360_f64;
+pub const MAX_SENSOR_DISTANCE: f64 = 10_f64;
+pub const MAX_SENSOR_SIZE: usize = 5;
+pub const MAX_TRAIL_WEIGHT: f64 = 500_f64;
+pub const MAX_TRAIL_DECAY: f64 = 10_f64;
+pub const MAX_TRAIL_DIFFUSE: f64 = 1_f64;
 
 /// Default settings
 const SIZE_X: usize = 512;

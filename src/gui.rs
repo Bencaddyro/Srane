@@ -1,9 +1,15 @@
-
 use egui::ColorImage;
 
-use crate::{config::{Settings, MAX_AGENT, MAX_X, MAX_Y}, simulation::{agents_move, agents_sense_rotate, map_deposit, map_diffuse_decay, Agent, Agents, TrailMap}};
-
-
+use crate::{
+    config::{
+        Settings, MAX_AGENT_N, MAX_AGENT_SPEED, MAX_AGENT_TURN, MAX_SENSOR_ANGLE,
+        MAX_SENSOR_DISTANCE, MAX_SENSOR_SIZE, MAX_SIZE_X, MAX_SIZE_Y, MAX_TRAIL_DECAY,
+        MAX_TRAIL_DIFFUSE, MAX_TRAIL_WEIGHT,
+    },
+    simulation::{
+        agents_move, agents_sense_rotate, map_deposit, map_diffuse_decay, Agent, Agents, TrailMap,
+    },
+};
 
 pub struct MyEguiApp {
     // Simulation settings
@@ -17,18 +23,16 @@ pub struct MyEguiApp {
     running: bool,
 }
 
-
-
 impl MyEguiApp {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let settings = Settings::default();
         let mut agents = Vec::new();
-        agents.resize_with(MAX_AGENT, || Agent::new(settings.size_x, settings.size_y));
+        agents.resize_with(MAX_AGENT_N, || Agent::new(settings.size_x, settings.size_y));
         MyEguiApp {
             settings,
             textury: None,
-            image: ColorImage::new([MAX_X, MAX_Y], egui::Color32::DARK_GRAY),
-            trail_map: vec![vec![0.0; MAX_X]; MAX_Y],
+            image: ColorImage::new([MAX_SIZE_X, MAX_SIZE_Y], egui::Color32::DARK_GRAY),
+            trail_map: vec![vec![0.0; MAX_SIZE_X]; MAX_SIZE_Y],
             agents,
             running: true,
         }
@@ -37,8 +41,8 @@ impl MyEguiApp {
     fn left_panel(&mut self, ctx: &egui::Context) {
         egui::SidePanel::new(egui::panel::Side::Left, "left_panel").show(ctx, |ui| {
             ui.label("Simulation Settings");
-            ui.add(egui::Slider::new(&mut self.settings.size_x, 1..=MAX_X).text("size_x"));
-            ui.add(egui::Slider::new(&mut self.settings.size_y, 1..=MAX_Y).text("size_y"));
+            ui.add(egui::Slider::new(&mut self.settings.size_x, 1..=MAX_SIZE_X).text("size_x"));
+            ui.add(egui::Slider::new(&mut self.settings.size_y, 1..=MAX_SIZE_Y).text("size_y"));
             if self.running {
                 if ui.add(egui::Button::new("Pause")).clicked() {
                     self.running = false
@@ -51,19 +55,21 @@ impl MyEguiApp {
             };
             ui.separator();
             ui.label("Agents Settings");
-            ui.add(egui::Slider::new(&mut self.settings.agent_n, 1..=MAX_AGENT).text("agent_n"));
+            ui.add(egui::Slider::new(&mut self.settings.agent_n, 1..=MAX_AGENT_N).text("agent_n"));
             ui.add(
-                egui::Slider::new(&mut self.settings.agent_speed, 0.0..=3.0).text("agent_speed"),
+                egui::Slider::new(&mut self.settings.agent_speed, 0.0..=MAX_AGENT_SPEED)
+                    .text("agent_speed"),
             );
             ui.add(
-                egui::Slider::new(&mut self.settings.agent_turn, 0.0..=360.0).text("agent_turn"),
+                egui::Slider::new(&mut self.settings.agent_turn, 0.0..=MAX_AGENT_TURN)
+                    .text("agent_turn"),
             );
             if ui.add(egui::Button::new("Default")).clicked() {
                 self.settings.default_agents()
             };
             if ui.add(egui::Button::new("Reset Agent")).clicked() {
                 let mut agents = Vec::new();
-                agents.resize_with(MAX_AGENT, || {
+                agents.resize_with(MAX_AGENT_N, || {
                     Agent::new(self.settings.size_x, self.settings.size_y)
                 });
                 self.agents = agents;
@@ -74,28 +80,35 @@ impl MyEguiApp {
             ui.separator();
             ui.label("Sensor Settings");
             ui.add(
-                egui::Slider::new(&mut self.settings.sensor_angle, 0.0..=360.0)
+                egui::Slider::new(&mut self.settings.sensor_angle, 0.0..=MAX_SENSOR_ANGLE)
                     .text("sensor_angle"),
             );
             ui.add(
-                egui::Slider::new(&mut self.settings.sensor_distance, 0.0..=10.0)
-                    .text("sensor_distance"),
+                egui::Slider::new(
+                    &mut self.settings.sensor_distance,
+                    0.0..=MAX_SENSOR_DISTANCE,
+                )
+                .text("sensor_distance"),
             );
-            ui.add(egui::Slider::new(&mut self.settings.sensor_size, 0..=5).text("sensor_size"));
+            ui.add(
+                egui::Slider::new(&mut self.settings.sensor_size, 0..=MAX_SENSOR_SIZE)
+                    .text("sensor_size"),
+            );
             if ui.add(egui::Button::new("Default")).clicked() {
                 self.settings.default_sensor()
             };
             ui.separator();
             ui.label("Trail Settings");
             ui.add(
-                egui::Slider::new(&mut self.settings.trail_weight, 0.0..=360.0)
+                egui::Slider::new(&mut self.settings.trail_weight, 0.0..=MAX_TRAIL_WEIGHT)
                     .text("trail_weight"),
             );
             ui.add(
-                egui::Slider::new(&mut self.settings.trail_decay, 0.0..=10.0).text("trail_decay"),
+                egui::Slider::new(&mut self.settings.trail_decay, 0.0..=MAX_TRAIL_DECAY)
+                    .text("trail_decay"),
             );
             ui.add(
-                egui::Slider::new(&mut self.settings.trail_diffuse, 0.0..=1.0)
+                egui::Slider::new(&mut self.settings.trail_diffuse, 0.0..=MAX_TRAIL_DIFFUSE)
                     .text("trail_diffuse"),
             );
             if ui.add(egui::Button::new("Default")).clicked() {
@@ -125,7 +138,7 @@ impl MyEguiApp {
         let current = self.image.as_raw_mut();
         for (y, row) in self.trail_map[0..self.settings.size_y].iter().enumerate() {
             for (x, value) in row[0..self.settings.size_x].iter().enumerate() {
-                current[(x + MAX_X * y) * 4..(x + MAX_X * y) * 4 + 3]
+                current[(x + MAX_SIZE_X * y) * 4..(x + MAX_SIZE_X * y) * 4 + 3]
                     .copy_from_slice(&[*value as u8; 3]);
             }
         }
