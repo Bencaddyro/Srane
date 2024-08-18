@@ -3,7 +3,7 @@ use rand::{thread_rng, Rng};
 use std::cmp::{max, min};
 use tracing::debug;
 
-use crate::{Settings, MAX_X, MAX_Y};
+use crate::config::{Settings, MAX_X, MAX_Y};
 
 #[derive(Clone, Debug)]
 pub struct Agent {
