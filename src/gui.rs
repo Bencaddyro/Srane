@@ -32,7 +32,7 @@ impl MyEguiApp {
             settings,
             textury: None,
             image: ColorImage::new([MAX_SIZE_X, MAX_SIZE_Y], egui::Color32::DARK_GRAY),
-            trail_map: vec![vec![0.0; MAX_SIZE_X]; MAX_SIZE_Y],
+            trail_map: vec![0.0; MAX_SIZE_X * MAX_SIZE_Y],
             agents,
             running: true,
         }
@@ -136,10 +136,12 @@ impl MyEguiApp {
 
     fn draw_map(&mut self) {
         let current = self.image.as_raw_mut();
-        for (y, row) in self.trail_map[0..self.settings.size_y].iter().enumerate() {
-            for (x, value) in row[0..self.settings.size_x].iter().enumerate() {
+
+        for y in 0..self.settings.size_y {
+            for x in 0..self.settings.size_x {
+                let value = self.trail_map[x + MAX_SIZE_X * y];
                 current[(x + MAX_SIZE_X * y) * 4..(x + MAX_SIZE_X * y) * 4 + 3]
-                    .copy_from_slice(&[*value as u8; 3]);
+                    .copy_from_slice(&[value as u8; 3]);
             }
         }
     }

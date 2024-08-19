@@ -13,7 +13,7 @@ pub struct Agent {
 }
 
 pub type Agents = Vec<Agent>;
-pub type TrailMap = Vec<Vec<f64>>;
+pub type TrailMap = Vec<f64>;
 
 impl Agent {
     pub fn new(size_x: usize, size_y: usize) -> Self {
@@ -69,7 +69,7 @@ fn agent_sense(trail_map: &TrailMap, agent: &Agent, sensor_angle: f64, settings:
                 max(y.round() as isize + offset_y, 0),
                 MAX_SIZE_Y as isize - 1,
             ) as usize;
-            sum += trail_map[pick_y][pick_x];
+            sum += trail_map[pick_x + MAX_SIZE_X * pick_y];
         }
     }
     sum
@@ -142,15 +142,15 @@ pub fn map_deposit(agents: &Agents, trail_map: &mut TrailMap, settings: &Setting
     for agent in &agents[0..settings.agent_n] {
         let x = agent.pos_x.floor() as usize;
         let y = agent.pos_y.floor() as usize;
-        trail_map[y][x] = settings.trail_weight;
+        trail_map[x + MAX_SIZE_X * y] = settings.trail_weight;
     }
 }
 
 /// Step 5&6: Diffuse & Decay
 pub fn map_diffuse_decay(trail_map: &mut TrailMap, settings: &Settings) {
     let source = trail_map.clone();
-    for (y, row) in trail_map.iter_mut().enumerate().take(settings.size_y) {
-        for (x, trail_xy) in row.iter_mut().enumerate().take(settings.size_x) {
+    for y in 0..settings.size_y {
+        for x in 0..settings.size_x {
             // Diffuse
             let mut sum = 0.0;
             for offset_x in [-1, 0, 1] {
@@ -159,15 +159,15 @@ pub fn map_diffuse_decay(trail_map: &mut TrailMap, settings: &Settings) {
                         min(max(x as isize + offset_x, 0), MAX_SIZE_X as isize - 1) as usize;
                     let pick_y =
                         min(max(y as isize + offset_y, 0), MAX_SIZE_Y as isize - 1) as usize;
-                    sum += source[pick_y][pick_x];
+                    sum += source[pick_x + MAX_SIZE_X * pick_y];
                 }
             }
             sum /= 9.0;
-            *trail_xy *= 1.0 - settings.trail_diffuse;
-            *trail_xy += sum * settings.trail_diffuse;
+            trail_map[x + MAX_SIZE_X * y] *= 1.0 - settings.trail_diffuse;
+            trail_map[x + MAX_SIZE_X * y] += sum * settings.trail_diffuse;
 
             // Decay
-            *trail_xy = 0_f64.max(*trail_xy - settings.trail_decay);
+            trail_map[x + MAX_SIZE_X * y] = 0_f64.max(trail_map[x + MAX_SIZE_X * y] - settings.trail_decay);
         }
     }
 }
