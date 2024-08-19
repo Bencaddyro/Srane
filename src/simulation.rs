@@ -76,7 +76,7 @@ fn agent_sense(trail_map: &TrailMap, agent: &Agent, sensor_angle: f64, settings:
 }
 
 /// Step 1&2: Sense & Rotate
-pub fn agents_sense_rotate(trail_map: &TrailMap, agents: &mut Agents, settings: &Settings) {
+pub fn cpu_sense_rotate(trail_map: &TrailMap, agents: &mut Agents, settings: &Settings) {
     let mut rng = thread_rng();
 
     for agent in &mut agents[0..settings.agent_n] {
@@ -110,7 +110,7 @@ pub fn agents_sense_rotate(trail_map: &TrailMap, agents: &mut Agents, settings: 
 }
 
 /// Step 3: Move
-pub fn agents_move(agents: &mut Agents, settings: &Settings) {
+pub fn cpu_move(agents: &mut Agents, settings: &Settings) {
     let mut rng = thread_rng();
     for agent in &mut agents[0..settings.agent_n] {
         agent.pos_x += agent.angle.cos() * settings.agent_speed;
@@ -138,7 +138,7 @@ pub fn agents_move(agents: &mut Agents, settings: &Settings) {
 }
 
 /// Step 4: Deposit
-pub fn map_deposit(agents: &Agents, trail_map: &mut TrailMap, settings: &Settings) {
+pub fn cpu_deposit(agents: &Agents, trail_map: &mut TrailMap, settings: &Settings) {
     for agent in &agents[0..settings.agent_n] {
         let x = agent.pos_x.floor() as usize;
         let y = agent.pos_y.floor() as usize;
@@ -147,7 +147,7 @@ pub fn map_deposit(agents: &Agents, trail_map: &mut TrailMap, settings: &Setting
 }
 
 /// Step 5&6: Diffuse & Decay
-pub fn map_diffuse_decay(trail_map: &mut TrailMap, settings: &Settings) {
+pub fn cpu_diffuse_decay(trail_map: &mut TrailMap, settings: &Settings) {
     let source = trail_map.clone();
     for y in 0..settings.size_y {
         for x in 0..settings.size_x {
@@ -167,7 +167,8 @@ pub fn map_diffuse_decay(trail_map: &mut TrailMap, settings: &Settings) {
             trail_map[x + MAX_SIZE_X * y] += sum * settings.trail_diffuse;
 
             // Decay
-            trail_map[x + MAX_SIZE_X * y] = 0_f64.max(trail_map[x + MAX_SIZE_X * y] - settings.trail_decay);
+            trail_map[x + MAX_SIZE_X * y] =
+                0_f64.max(trail_map[x + MAX_SIZE_X * y] - settings.trail_decay);
         }
     }
 }

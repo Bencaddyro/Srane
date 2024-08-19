@@ -6,8 +6,9 @@ use crate::{
         MAX_SENSOR_DISTANCE, MAX_SENSOR_SIZE, MAX_SIZE_X, MAX_SIZE_Y, MAX_TRAIL_DECAY,
         MAX_TRAIL_DIFFUSE, MAX_TRAIL_WEIGHT,
     },
+    gpu::{gpu_decay, gpu_diffuse},
     simulation::{
-        agents_move, agents_sense_rotate, map_deposit, map_diffuse_decay, Agent, Agents, TrailMap,
+        cpu_move, cpu_sense_rotate, cpu_deposit, Agent, Agents, TrailMap,
     },
 };
 
@@ -150,13 +151,22 @@ impl MyEguiApp {
 impl eframe::App for MyEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.running {
-            agents_sense_rotate(&self.trail_map, &mut self.agents, &self.settings);
-            agents_move(&mut self.agents, &self.settings);
-            map_deposit(&self.agents, &mut self.trail_map, &self.settings);
-            map_diffuse_decay(&mut self.trail_map, &self.settings);
+            cpu_sense_rotate(&self.trail_map, &mut self.agents, &self.settings);
+
+            cpu_move(&mut self.agents, &self.settings);
+
+            cpu_deposit(&self.agents, &mut self.trail_map, &self.settings);
+
+            // Diffuse
+            gpu_diffuse(&mut self.trail_map, &self.settings).unwrap();
+            // Decay
+            gpu_decay(&mut self.trail_map, &self.settings).unwrap();
         }
+
         self.draw_map();
+
         self.left_panel(ctx);
+
         self.central_panel(ctx);
     }
 }
