@@ -8,7 +8,7 @@ use crate::{
     },
     gpu::{gpu_decay, gpu_diffuse},
     simulation::{
-        cpu_move, cpu_sense_rotate, cpu_deposit, Agent, Agents, TrailMap,
+        cpu_deposit, cpu_diffuse_decay, cpu_move, cpu_sense_rotate, Agent, Agents, TrailMap,
     },
 };
 
@@ -22,6 +22,7 @@ pub struct MyEguiApp {
     agents: Agents,
     // State var
     running: bool,
+    gpu: bool,
 }
 
 impl MyEguiApp {
@@ -36,6 +37,7 @@ impl MyEguiApp {
             trail_map: vec![0.0; MAX_SIZE_X * MAX_SIZE_Y],
             agents,
             running: true,
+            gpu: false,
         }
     }
 
@@ -54,6 +56,7 @@ impl MyEguiApp {
             if ui.add(egui::Button::new("Reset")).clicked() {
                 self.settings = Settings::default()
             };
+            ui.checkbox(&mut self.gpu, "Enable GPU render");
             ui.separator();
             ui.label("Agents Settings");
             ui.add(egui::Slider::new(&mut self.settings.agent_n, 1..=MAX_AGENT_N).text("agent_n"));
@@ -68,16 +71,31 @@ impl MyEguiApp {
             if ui.add(egui::Button::new("Default")).clicked() {
                 self.settings.default_agents()
             };
-            if ui.add(egui::Button::new("Reset Agent")).clicked() {
+
+            ui.separator();
+            ui.label("Spawn Settings");
+            if ui.add(egui::Button::new("Random Agent")).clicked() {
                 let mut agents = Vec::new();
                 agents.resize_with(MAX_AGENT_N, || {
                     Agent::new(self.settings.size_x, self.settings.size_y)
                 });
                 self.agents = agents;
             };
-            // ui.separator();
-            // ui.label("Spawn Settings");
-            // ui.label("TODO");
+            ui.add(
+                egui::Slider::new(&mut self.settings.spawn_radius, 0_f64..=MAX_SIZE_Y as f64)
+                    .text("spawn_radius"),
+            );
+
+            if ui.add(egui::Button::new("Random Circle Agent")).clicked() {
+                let mut agents = Vec::new();
+                agents.resize_with(MAX_AGENT_N, || Agent::new_circle(&self.settings));
+                self.agents = agents;
+            };
+            if ui.add(egui::Button::new("Random Star Agent")).clicked() {
+                let mut agents = Vec::new();
+                agents.resize_with(MAX_AGENT_N, || Agent::new_star(&self.settings));
+                self.agents = agents;
+            };
             ui.separator();
             ui.label("Sensor Settings");
             ui.add(
@@ -151,16 +169,27 @@ impl MyEguiApp {
 impl eframe::App for MyEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.running {
-            cpu_sense_rotate(&self.trail_map, &mut self.agents, &self.settings);
+            if self.gpu {
+                cpu_sense_rotate(&self.trail_map, &mut self.agents, &self.settings);
 
-            cpu_move(&mut self.agents, &self.settings);
+                cpu_move(&mut self.agents, &self.settings);
 
-            cpu_deposit(&self.agents, &mut self.trail_map, &self.settings);
+                cpu_deposit(&self.agents, &mut self.trail_map, &self.settings);
 
-            // Diffuse
-            gpu_diffuse(&mut self.trail_map, &self.settings).unwrap();
-            // Decay
-            gpu_decay(&mut self.trail_map, &self.settings).unwrap();
+                // Diffuse
+                gpu_diffuse(&mut self.trail_map, &self.settings).unwrap();
+                // Decay
+                gpu_decay(&mut self.trail_map, &self.settings).unwrap();
+            } else {
+                cpu_sense_rotate(&self.trail_map, &mut self.agents, &self.settings);
+
+                cpu_move(&mut self.agents, &self.settings);
+
+                cpu_deposit(&self.agents, &mut self.trail_map, &self.settings);
+
+                // Diffuse
+                cpu_diffuse_decay(&mut self.trail_map, &self.settings);
+            }
         }
 
         self.draw_map();

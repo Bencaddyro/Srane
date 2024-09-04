@@ -10,29 +10,23 @@ pub fn gpu_diffuse(trail_map: &mut TrailMap, settings: &Settings) -> ocl::Result
         __kernel void diffuse(__global double* trailmap, double trail_diffuse, long max_size_x, long max_size_y) {
             int x = get_global_id(0) % max_size_x;
             int y = get_global_id(0) / max_size_x;
-            double sum = trailmap[get_global_id(0)];
+            double sum = 0;
 
-            // Top Row
-            // Bottom Row
-            // Right Column
-            // Left Column
+            for (int offset_X = -1; offset_X <= 1; offset_X++) {
+            for (int offset_Y = -1; offset_Y <= 1; offset_Y++) {
 
-            // Middle
-            if ( (x != 0) && ( y != 0) && (x < (max_size_x-1)) && (y < (max_size_y-1)) ) {
-                sum += trailmap[x + 1 + (y-1) * max_size_x];
-                sum += trailmap[x + 1 + y * max_size_x];
-                sum += trailmap[x + 1 + (y+1) * max_size_x];
+                int p_x = x + offset_X;
+                int p_y = y + offset_Y;
 
-                sum += trailmap[x + (y-1) * max_size_x];
-                sum += trailmap[x + (y+1) * max_size_x];
+            if ( p_x >= 0 && p_y >= 0 && p_x < max_size_x && p_y < max_size_y ) {
+                sum += trailmap[p_x + p_y * max_size_x];
 
-                sum += trailmap[x - 1 + (y-1) * max_size_x];
-                sum += trailmap[x - 1 + y * max_size_x];
-                sum += trailmap[x - 1 + (y+1) * max_size_x];
 
-                trailmap[get_global_id(0)] *= (double)1 - trail_diffuse;
-                trailmap[get_global_id(0)] += sum / (double)9 * trail_diffuse;
             }
+
+            }}
+            trailmap[get_global_id(0)] *= (double)1 - trail_diffuse;
+            trailmap[get_global_id(0)] += sum / (double)9 * trail_diffuse;
         }
     "#;
 
@@ -59,7 +53,6 @@ pub fn gpu_diffuse(trail_map: &mut TrailMap, settings: &Settings) -> ocl::Result
     buffer.read(trail_map).enq()?;
     Ok(())
 }
-
 
 pub fn gpu_decay(trail_map: &mut TrailMap, settings: &Settings) -> ocl::Result<()> {
     let kernel = r#"

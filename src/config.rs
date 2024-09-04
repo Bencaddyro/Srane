@@ -1,7 +1,7 @@
 /// Max settings
-pub const MAX_SIZE_X: usize = 1920;
-pub const MAX_SIZE_Y: usize = 1080;
-pub const MAX_AGENT_N: usize = 99999;
+pub const MAX_SIZE_X: usize = 1024;
+pub const MAX_SIZE_Y: usize = 1024;
+pub const MAX_AGENT_N: usize = 999999;
 pub const MAX_AGENT_SPEED: f64 = 3_f64;
 pub const MAX_AGENT_TURN: f64 = 360_f64;
 pub const MAX_SENSOR_ANGLE: f64 = 360_f64;
@@ -17,6 +17,7 @@ const SIZE_Y: usize = 512;
 const AGENT_N: usize = 6000;
 const AGENT_SPEED: f64 = 1_f64;
 const AGENT_TURN: f64 = 35_f64;
+const SPAWN_RADIUS: f64 = 256_f64;
 const SENSOR_ANGLE: f64 = 35_f64;
 const SENSOR_DISTANCE: f64 = 3.5;
 const SENSOR_SIZE: usize = 1;
@@ -32,11 +33,13 @@ pub struct Settings {
     pub agent_n: usize,
     pub agent_speed: f64,
     pub agent_turn: f64,
-    // Sensor Settings
+    /// Spawn Settings
+    pub spawn_radius: f64,
+    /// Sensor Settings
     pub sensor_angle: f64,
     pub sensor_distance: f64,
     pub sensor_size: usize,
-    // Trail Settings
+    /// Trail Settings
     pub trail_weight: f64,
     pub trail_decay: f64,
     pub trail_diffuse: f64,
@@ -68,6 +71,7 @@ impl Default for Settings {
             agent_n: AGENT_N,
             agent_speed: AGENT_SPEED,
             agent_turn: AGENT_TURN,
+            spawn_radius: SPAWN_RADIUS,
             sensor_angle: SENSOR_ANGLE,
             sensor_distance: SENSOR_DISTANCE,
             sensor_size: SENSOR_SIZE,

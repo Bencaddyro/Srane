@@ -24,31 +24,34 @@ impl Agent {
             angle: rng.gen::<f64>() * 2_f64 * PI,
         }
     }
-    /* Spawn
-    fn new_agent() -> Agent {
+
+    pub fn new_circle(settings: &Settings) -> Agent {
         let mut rng = rand::thread_rng();
-        match AGENT_SPAWN {
-            1 => Agent{
-                    pos_x: rng.gen::<f64>() * IMAGE_X as f64,
-                    pos_y: rng.gen::<f64>() * IMAGE_Y as f64,
-                    angle: rng.gen::<f64>() * 2.0 * 3.14159,
-                },
-            2 => {
-                let distance = rng.gen::<f64>() * SPAWN_SIZE;
-                let angle = rng.gen::<f64>() * 2.0 * 3.14159;
-                Agent{
-                    pos_x: IMAGE_X as f64 / 2.0 + angle.cos() * distance,
-                    pos_y: IMAGE_Y as f64 / 2.0 + angle.sin() * distance,
-                    angle: angle + 3.14159,
-                }},
-            _ => Agent{
-                    pos_x: IMAGE_X as f64 / 2.0,
-                    pos_y: IMAGE_Y as f64 / 2.0,
-                    angle: rng.gen::<f64>() * 2.0 * 3.14159,
-                },
+        let angle = rng.gen::<f64>() * 2_f64 * PI;
+        let radius = rng.gen::<f64>() * settings.spawn_radius;
+
+        let pos_x = settings.size_x as f64 / 2_f64 + angle.cos() * radius;
+        let pos_y = settings.size_y as f64 / 2_f64 + angle.sin() * radius;
+
+        Agent {
+            pos_x,
+            pos_y,
+            angle: angle + PI,
         }
     }
-    */
+
+    pub fn new_star(settings: &Settings) -> Agent {
+        let mut rng = rand::thread_rng();
+        let angle = rng.gen::<f64>() * 2_f64 * PI;
+        let pos_x = settings.size_x as f64 / 2_f64;
+        let pos_y = settings.size_y as f64 / 2_f64;
+
+        Agent {
+            pos_x,
+            pos_y,
+            angle,
+        }
+    }
 }
 
 fn agent_sense(trail_map: &TrailMap, agent: &Agent, sensor_angle: f64, settings: &Settings) -> f64 {
