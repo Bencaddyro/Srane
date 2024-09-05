@@ -6,7 +6,7 @@ use crate::{
         MAX_SENSOR_DISTANCE, MAX_SENSOR_SIZE, MAX_SIZE_X, MAX_SIZE_Y, MAX_TRAIL_DECAY,
         MAX_TRAIL_DIFFUSE, MAX_TRAIL_WEIGHT,
     },
-    gpu::{gpu_decay, gpu_diffuse},
+    gpu::{gpu_all, gpu_decay, gpu_diffuse},
     simulation::{
         cpu_deposit, cpu_diffuse_decay, cpu_move, cpu_sense_rotate, Agent, Agents, TrailMap,
     },
@@ -176,10 +176,8 @@ impl eframe::App for MyEguiApp {
 
                 cpu_deposit(&self.agents, &mut self.trail_map, &self.settings);
 
-                // Diffuse
-                gpu_diffuse(&mut self.trail_map, &self.settings).unwrap();
-                // Decay
-                gpu_decay(&mut self.trail_map, &self.settings).unwrap();
+                // Diffuse & Decay
+                gpu_all(&mut self.trail_map, &self.settings).unwrap();
             } else {
                 cpu_sense_rotate(&self.trail_map, &mut self.agents, &self.settings);
 
