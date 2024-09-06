@@ -1,15 +1,22 @@
 use core::f64::consts::PI;
+use ocl::OclPrm;
 use rand::{thread_rng, Rng};
 use std::cmp::{max, min};
 use tracing::debug;
 
 use crate::config::{Settings, MAX_SIZE_X, MAX_SIZE_Y};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Default, Copy)]
 pub struct Agent {
     pos_x: f64,
     pos_y: f64,
     angle: f64,
+}
+
+
+
+unsafe impl OclPrm for Agent {
+
 }
 
 pub type Agents = Vec<Agent>;
@@ -53,6 +60,8 @@ impl Agent {
         }
     }
 }
+
+
 
 fn agent_sense(trail_map: &TrailMap, agent: &Agent, sensor_angle: f64, settings: &Settings) -> f64 {
     let angle = agent.angle + sensor_angle.to_radians();

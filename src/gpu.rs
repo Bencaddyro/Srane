@@ -2,35 +2,60 @@ use ocl::ProQue;
 
 use crate::{
     config::{Settings, MAX_AGENT_N, MAX_SIZE_X, MAX_SIZE_Y},
-    simulation::{Agents, TrailMap},
+    simulation::{Agent, Agents, TrailMap},
 };
 
 pub fn gpu_move(agents: &mut Agents, settings: &Settings) -> ocl::Result<()> {
     let kernel = r#"
-        __kernel void move(__global double* agent, uint agent_n, uint size_x, uint size_y) {
 
+        struct agent {
+            double pos_x;
+            double pos_y;
+            double angle;
+        };
+
+        __kernel void move(__global struct agent* one_agent, double agent_speed, uint agent_n, uint size_x, uint size_y) {
+            if (get_global_id(0) < agent_n) {
+
+                one_agent->pos_x += cos(one_agent->angle) * agent_speed;
+                one_agent->pos_y += sin(one_agent->angle) * agent_speed;
+
+                // Check Collision
+                if ( (one_agent->pos_x < (double)0) ||
+                     (one_agent->pos_x >= (double)size_x) ||
+                     (one_agent->pos_y < (double)0) ||
+                     (one_agent->pos_y >= (double)size_y)
+                    ) {
+                    // one_agent->pos_x = one_agent->pos_x.max(0_f64).min(size_x - 1);
+                    // one_agent->pos_y = one_agent->pos_y.max(0_f64).min(size_y - 1);
+                    // one_agent->angle = rng.gen::<f64>() * 2_f64 * PI;
+                }
+            }
         }
     "#;
 
-    // let pro_que = ProQue::builder()
-    //     .src(kernel)
-    //     .dims(MAX_AGENT_N)
-    //     .build()?;
-    //
-    // let buffer = pro_que.create_buffer::<f64>()?;
-    // buffer.write(&*trail_map).enq()?;
-    //
-    // let kernel = pro_que
-    //     .kernel_builder("move")
-    //     .arg(&buffer)
-    //     .arg(settings.agent_n)
-    //     .build()?;
-    //
-    // unsafe {
-    //     kernel.enq()?;
-    // }
-    //
-    // buffer.read(trail_map).enq()?;
+    let pro_que = ProQue::builder()
+        .src(kernel)
+        .dims(MAX_AGENT_N)
+        .build()?;
+
+    let buffer = pro_que.create_buffer::<Agent>()?;
+    buffer.write(&*agents).enq()?;
+
+    let kernel = pro_que
+        .kernel_builder("move")
+        .arg(&buffer)
+        .arg(settings.agent_speed)
+        .arg(settings.agent_n)
+        .arg(settings.size_x)
+        .arg(settings.size_y)
+        .build()?;
+
+    unsafe {
+        kernel.enq()?;
+    }
+
+    buffer.read(agents).enq()?;
     Ok(())
 }
 
@@ -71,8 +96,8 @@ pub fn gpu_diffuse(trail_map: &mut TrailMap, settings: &Settings) -> ocl::Result
         .kernel_builder("diffuse")
         .arg(&buffer)
         .arg(settings.trail_diffuse)
-        .arg(MAX_SIZE_X as i64)
-        .arg(MAX_SIZE_Y as i64)
+        .arg(MAX_SIZE_X)
+        .arg(MAX_SIZE_Y)
         .build()?;
 
     unsafe {
@@ -160,8 +185,8 @@ pub fn gpu_all(trail_map: &mut TrailMap, settings: &Settings) -> ocl::Result<()>
     let kernel = pro_que
         .kernel_builder("all")
         .arg(&buffer)
-        .arg(MAX_SIZE_X as i64)
-        .arg(MAX_SIZE_Y as i64)
+        .arg(MAX_SIZE_X)
+        .arg(MAX_SIZE_Y)
         .arg(settings.trail_diffuse)
         .arg(settings.trail_decay)
         .build()?;
