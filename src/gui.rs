@@ -29,12 +29,17 @@ impl MyEguiApp {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let settings = Settings::default();
         let mut agents = Vec::new();
-        agents.resize_with(MAX_AGENT_N, || Agent::new(settings.size_x, settings.size_y));
+        agents.resize_with(MAX_AGENT_N as usize, || {
+            Agent::new(settings.size_x, settings.size_y)
+        });
         MyEguiApp {
             settings,
             textury: None,
-            image: ColorImage::new([MAX_SIZE_X, MAX_SIZE_Y], egui::Color32::DARK_GRAY),
-            trail_map: vec![0.0; MAX_SIZE_X * MAX_SIZE_Y],
+            image: ColorImage::new(
+                [MAX_SIZE_X as usize, MAX_SIZE_Y as usize],
+                egui::Color32::DARK_GRAY,
+            ),
+            trail_map: vec![0.0; (MAX_SIZE_X * MAX_SIZE_Y) as usize],
             agents,
             running: true,
             gpu: false,
@@ -76,7 +81,7 @@ impl MyEguiApp {
             ui.label("Spawn Settings");
             if ui.add(egui::Button::new("Random Agent")).clicked() {
                 let mut agents = Vec::new();
-                agents.resize_with(MAX_AGENT_N, || {
+                agents.resize_with(MAX_AGENT_N as usize, || {
                     Agent::new(self.settings.size_x, self.settings.size_y)
                 });
                 self.agents = agents;
@@ -88,12 +93,12 @@ impl MyEguiApp {
 
             if ui.add(egui::Button::new("Random Circle Agent")).clicked() {
                 let mut agents = Vec::new();
-                agents.resize_with(MAX_AGENT_N, || Agent::new_circle(&self.settings));
+                agents.resize_with(MAX_AGENT_N as usize, || Agent::new_circle(&self.settings));
                 self.agents = agents;
             };
             if ui.add(egui::Button::new("Random Star Agent")).clicked() {
                 let mut agents = Vec::new();
-                agents.resize_with(MAX_AGENT_N, || Agent::new_star(&self.settings));
+                agents.resize_with(MAX_AGENT_N as usize, || Agent::new_star(&self.settings));
                 self.agents = agents;
             };
             ui.separator();
@@ -158,8 +163,9 @@ impl MyEguiApp {
 
         for y in 0..self.settings.size_y {
             for x in 0..self.settings.size_x {
-                let value = self.trail_map[x + MAX_SIZE_X * y];
-                current[(x + MAX_SIZE_X * y) * 4..(x + MAX_SIZE_X * y) * 4 + 3]
+                let value = self.trail_map[(x + MAX_SIZE_X * y) as usize];
+                current
+                    [((x + MAX_SIZE_X * y) * 4) as usize..((x + MAX_SIZE_X * y) * 4 + 3) as usize]
                     .copy_from_slice(&[value as u8; 3]);
             }
         }

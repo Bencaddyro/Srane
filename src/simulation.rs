@@ -16,7 +16,7 @@ pub type Agents = Vec<Agent>;
 pub type TrailMap = Vec<f64>;
 
 impl Agent {
-    pub fn new(size_x: usize, size_y: usize) -> Self {
+    pub fn new(size_x: u32, size_y: u32) -> Self {
         let mut rng = rand::thread_rng();
         Agent {
             pos_x: rng.gen::<f64>() * size_x as f64,
@@ -72,7 +72,7 @@ fn agent_sense(trail_map: &TrailMap, agent: &Agent, sensor_angle: f64, settings:
                 max(y.round() as isize + offset_y, 0),
                 MAX_SIZE_Y as isize - 1,
             ) as usize;
-            sum += trail_map[pick_x + MAX_SIZE_X * pick_y];
+            sum += trail_map[pick_x + MAX_SIZE_X as usize * pick_y];
         }
     }
     sum
@@ -82,7 +82,7 @@ fn agent_sense(trail_map: &TrailMap, agent: &Agent, sensor_angle: f64, settings:
 pub fn cpu_sense_rotate(trail_map: &TrailMap, agents: &mut Agents, settings: &Settings) {
     let mut rng = thread_rng();
 
-    for agent in &mut agents[0..settings.agent_n] {
+    for agent in &mut agents[0..settings.agent_n as usize] {
         // Sense
         let (weight_forward, weight_left, weight_right) = (
             agent_sense(trail_map, agent, 0.0, settings),
@@ -115,7 +115,7 @@ pub fn cpu_sense_rotate(trail_map: &TrailMap, agents: &mut Agents, settings: &Se
 /// Step 3: Move
 pub fn cpu_move(agents: &mut Agents, settings: &Settings) {
     let mut rng = thread_rng();
-    for agent in &mut agents[0..settings.agent_n] {
+    for agent in &mut agents[0..settings.agent_n as usize] {
         agent.pos_x += agent.angle.cos() * settings.agent_speed;
         agent.pos_y += agent.angle.sin() * settings.agent_speed;
 
@@ -142,10 +142,10 @@ pub fn cpu_move(agents: &mut Agents, settings: &Settings) {
 
 /// Step 4: Deposit
 pub fn cpu_deposit(agents: &Agents, trail_map: &mut TrailMap, settings: &Settings) {
-    for agent in &agents[0..settings.agent_n] {
+    for agent in &agents[0..settings.agent_n as usize] {
         let x = agent.pos_x.floor() as usize;
         let y = agent.pos_y.floor() as usize;
-        trail_map[x + MAX_SIZE_X * y] = settings.trail_weight;
+        trail_map[x + MAX_SIZE_X as usize * y] = settings.trail_weight;
     }
 }
 
@@ -162,16 +162,16 @@ pub fn cpu_diffuse_decay(trail_map: &mut TrailMap, settings: &Settings) {
                         min(max(x as isize + offset_x, 0), MAX_SIZE_X as isize - 1) as usize;
                     let pick_y =
                         min(max(y as isize + offset_y, 0), MAX_SIZE_Y as isize - 1) as usize;
-                    sum += source[pick_x + MAX_SIZE_X * pick_y];
+                    sum += source[pick_x + MAX_SIZE_X as usize * pick_y];
                 }
             }
             sum /= 9.0;
-            trail_map[x + MAX_SIZE_X * y] *= 1.0 - settings.trail_diffuse;
-            trail_map[x + MAX_SIZE_X * y] += sum * settings.trail_diffuse;
+            trail_map[(x + MAX_SIZE_X * y) as usize] *= 1.0 - settings.trail_diffuse;
+            trail_map[(x + MAX_SIZE_X * y) as usize] += sum * settings.trail_diffuse;
 
             // Decay
-            trail_map[x + MAX_SIZE_X * y] =
-                0_f64.max(trail_map[x + MAX_SIZE_X * y] - settings.trail_decay);
+            trail_map[(x + MAX_SIZE_X * y) as usize] =
+                0_f64.max(trail_map[(x + MAX_SIZE_X * y) as usize] - settings.trail_decay);
         }
     }
 }

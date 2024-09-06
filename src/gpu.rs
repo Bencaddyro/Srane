@@ -1,13 +1,42 @@
 use ocl::ProQue;
 
 use crate::{
-    config::{Settings, MAX_SIZE_X, MAX_SIZE_Y},
-    simulation::TrailMap,
+    config::{Settings, MAX_AGENT_N, MAX_SIZE_X, MAX_SIZE_Y},
+    simulation::{Agents, TrailMap},
 };
+
+pub fn gpu_move(agents: &mut Agents, settings: &Settings) -> ocl::Result<()> {
+    let kernel = r#"
+        __kernel void move(__global double* agent, uint agent_n, uint size_x, uint size_y) {
+
+        }
+    "#;
+
+    // let pro_que = ProQue::builder()
+    //     .src(kernel)
+    //     .dims(MAX_AGENT_N)
+    //     .build()?;
+    //
+    // let buffer = pro_que.create_buffer::<f64>()?;
+    // buffer.write(&*trail_map).enq()?;
+    //
+    // let kernel = pro_que
+    //     .kernel_builder("move")
+    //     .arg(&buffer)
+    //     .arg(settings.agent_n)
+    //     .build()?;
+    //
+    // unsafe {
+    //     kernel.enq()?;
+    // }
+    //
+    // buffer.read(trail_map).enq()?;
+    Ok(())
+}
 
 pub fn gpu_diffuse(trail_map: &mut TrailMap, settings: &Settings) -> ocl::Result<()> {
     let kernel = r#"
-        __kernel void diffuse(__global double* trailmap, double trail_diffuse, long max_size_x, long max_size_y) {
+        __kernel void diffuse(__global double* trailmap, double trail_diffuse, uint max_size_x, uint max_size_y) {
             int x = get_global_id(0) % max_size_x;
             int y = get_global_id(0) / max_size_x;
             double sum = 0;
@@ -89,7 +118,7 @@ pub fn gpu_decay(trail_map: &mut TrailMap, settings: &Settings) -> ocl::Result<(
 
 pub fn gpu_all(trail_map: &mut TrailMap, settings: &Settings) -> ocl::Result<()> {
     let kernel = r#"
-            __kernel void all(__global double* trailmap, long max_size_x, long max_size_y, double trail_diffuse, double trail_decay) {
+            __kernel void all(__global double* trailmap, uint max_size_x, uint max_size_y, double trail_diffuse, double trail_decay) {
 
             int x = get_global_id(0) % max_size_x;
             int y = get_global_id(0) / max_size_x;
