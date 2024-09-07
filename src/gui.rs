@@ -61,7 +61,11 @@ impl MyEguiApp {
             if ui.add(egui::Button::new("Reset")).clicked() {
                 self.settings = Settings::default()
             };
-            ui.checkbox(&mut self.gpu, "Enable GPU render");
+            // ui.checkbox(&mut self.gpu, "Enable GPU render");
+            ui.add_enabled(
+                false,
+                egui::Checkbox::new(&mut self.gpu, "Enable GPU render"),
+            );
             ui.separator();
             ui.label("Agents Settings");
             ui.add(egui::Slider::new(&mut self.settings.agent_n, 1..=MAX_AGENT_N).text("agent_n"));
@@ -176,14 +180,14 @@ impl eframe::App for MyEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.running {
             if self.gpu {
-                // cpu_sense_rotate(&self.trail_map, &mut self.agents, &self.settings);
+                cpu_sense_rotate(&self.trail_map, &mut self.agents, &self.settings);
 
                 gpu_move(&mut self.agents, &self.settings).unwrap();
 
                 cpu_deposit(&self.agents, &mut self.trail_map, &self.settings);
 
                 // Diffuse & Decay
-                // gpu_all(&mut self.trail_map, &self.settings).unwrap();
+                gpu_all(&mut self.trail_map, &self.settings).unwrap();
             } else {
                 cpu_sense_rotate(&self.trail_map, &mut self.agents, &self.settings);
 

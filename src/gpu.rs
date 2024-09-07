@@ -1,26 +1,27 @@
 use ocl::ProQue;
 
 use crate::{
-    config::{Settings, MAX_AGENT_N, MAX_SIZE_X, MAX_SIZE_Y},
+    config::{Settings, MAX_SIZE_X, MAX_SIZE_Y},
     simulation::{Agent, Agents, TrailMap},
 };
 
 pub fn gpu_move(agents: &mut Agents, settings: &Settings) -> ocl::Result<()> {
     let kernel = r#"
 
-        struct agent {
+        typedef struct s_agent {
             double pos_x;
             double pos_y;
             double angle;
-        };
+        } agent;
 
-        __kernel void move(__global struct agent* one_agent, double agent_speed, uint agent_n, uint size_x, uint size_y) {
+        __kernel void move(__global agent * source, double agent_speed, uint agent_n, uint size_x, uint size_y) {
             if (get_global_id(0) < agent_n) {
 
                 one_agent->pos_x += cos(one_agent->angle) * agent_speed;
                 one_agent->pos_y += sin(one_agent->angle) * agent_speed;
 
                 // Check Collision
+                // TODO
                 if ( (one_agent->pos_x < (double)0) ||
                      (one_agent->pos_x >= (double)size_x) ||
                      (one_agent->pos_y < (double)0) ||
@@ -34,13 +35,18 @@ pub fn gpu_move(agents: &mut Agents, settings: &Settings) -> ocl::Result<()> {
         }
     "#;
 
-    let pro_que = ProQue::builder()
-        .src(kernel)
-        .dims(MAX_AGENT_N)
-        .build()?;
+    let pro_que = ProQue::builder().src(kernel).dims(1).build()?;
+
+    // println!("compile ok");
 
     let buffer = pro_que.create_buffer::<Agent>()?;
+
+    // println!("buffer create ok");
+
+    // println!("{buffer:?}");
+
     buffer.write(&*agents).enq()?;
+    // println!("buffer write ok");
 
     let kernel = pro_que
         .kernel_builder("move")
@@ -51,11 +57,15 @@ pub fn gpu_move(agents: &mut Agents, settings: &Settings) -> ocl::Result<()> {
         .arg(settings.size_y)
         .build()?;
 
+    // println!("kernel launched");
     unsafe {
         kernel.enq()?;
     }
+    // println!("kernel exited");
 
     buffer.read(agents).enq()?;
+    // println!("buffer readed");
+
     Ok(())
 }
 

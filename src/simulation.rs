@@ -13,11 +13,7 @@ pub struct Agent {
     angle: f64,
 }
 
-
-
-unsafe impl OclPrm for Agent {
-
-}
+unsafe impl OclPrm for Agent {}
 
 pub type Agents = Vec<Agent>;
 pub type TrailMap = Vec<f64>;
@@ -60,8 +56,6 @@ impl Agent {
         }
     }
 }
-
-
 
 fn agent_sense(trail_map: &TrailMap, agent: &Agent, sensor_angle: f64, settings: &Settings) -> f64 {
     let angle = agent.angle + sensor_angle.to_radians();

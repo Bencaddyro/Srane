@@ -1,14 +1,14 @@
 /// Max settings
 pub const MAX_SIZE_X: u32 = 1024;
 pub const MAX_SIZE_Y: u32 = 1024;
-pub const MAX_AGENT_N: u32 = 999999;
+pub const MAX_AGENT_N: u32 = 300000;
 pub const MAX_AGENT_SPEED: f64 = 3_f64;
 pub const MAX_AGENT_TURN: f64 = 360_f64;
 pub const MAX_SENSOR_ANGLE: f64 = 360_f64;
 pub const MAX_SENSOR_DISTANCE: f64 = 10_f64;
 pub const MAX_SENSOR_SIZE: u8 = 5;
 pub const MAX_TRAIL_WEIGHT: f64 = 500_f64;
-pub const MAX_TRAIL_DECAY: f64 = 10_f64;
+pub const MAX_TRAIL_DECAY: f64 = 100_f64;
 pub const MAX_TRAIL_DIFFUSE: f64 = 1_f64;
 
 /// Default settings
