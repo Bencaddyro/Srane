@@ -1,6 +1,7 @@
 use gui::MyEguiApp;
 
 mod config;
+mod gpu;
 mod gui;
 mod simulation;
 
